@@ -2,8 +2,8 @@ import asyncio
 from tortoise import Tortoise
 from aiohttp_requests import requests
 from bs4 import BeautifulSoup
-from stock_checker.models import Stock
-from stock_checker.db import init_db
+from models import Stock
+from db import init_db
 
 async def get_html(url):
     r = await requests.get(url)
@@ -64,9 +64,6 @@ async def save_stock(list_of_raw_stocks):
         in_stock=False if stock['in_stock'] else True,
         url=stock['url']) for stock in list_of_raw_stocks]
     await Stock.bulk_create(stocks)
-    Stock.bulk_create([
-
-    ])
     #stocks = await Stock.all()
     print("Наличие пустой БД")
     #print(stocks)
@@ -77,14 +74,24 @@ async def update_stock(list_of_raw_stocks):
         title=stock['title'],
         in_stock=False if stock['in_stock'] else True,
         url=stock['url']) for stock in list_of_raw_stocks}
+    # здесь получаем товары из бд
     stocks_from_db = {stock for stock in await Stock.all()}
+    # вычитаем из спарсенных товаров с сайта товары из бд, получаем новые
     new_stocks = stocks - stocks_from_db
+    # сохраняем их в баэу
+    await Stock.bulk_create(stocks)
+    # вычитаем из товаров из бд спарсенние товары с сайта, получаем старые
     products_removed_from_shop = stocks_from_db - stocks
-    print("Новые товары")
-    print(new_stocks)
+    #TODO удалить их используя тортойз орм
+    pass
+    # тепер находим пересечение и обновляем, вся логика изменения тут, что изменилось у товара
+    for new_stock in stocks & stocks_from_db:
+        old_stock = await Stock.filter(number=new_stock.title).first()
+        # все ифы логика сравнения и уведомленпя тут old_stock = new_stock заменяем старые данные на ноыве
+        # если не совпадаэт
+        await old_stock.save()
 
-    print("Удаленные из магазина товары")
-    print(products_removed_from_shop)
+
 
 
 async def main():
@@ -98,12 +105,7 @@ async def main():
     for i in range(1, total_pages + 1):
         url_gen = url + page_part + str(i)
         stock_row_data_list = get_page_data(await get_html(url_gen))
-        # print(full_row_data_list)
         full_row_data_list += stock_row_data_list
-    # print(full_row_data_list)
-
-    # сохранение в пустую БД
-    # await save_stock(full_row_data_list)
     #обновление БД
     await update_stock(full_row_data_list)
 

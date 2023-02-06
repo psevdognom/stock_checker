@@ -2,7 +2,7 @@ from tortoise import Tortoise, run_async
 
 async def init():
     await Tortoise.init(
-        db_url='postgres://admin:admin@localhost:5432/tammytanuka',
+        db_url='postgres://super_admin:SomeSecretPassword@localhost:5432/postgres',
         modules={'models': ['models']}
     )
     # Generate the schema
