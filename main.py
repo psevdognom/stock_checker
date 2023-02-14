@@ -68,6 +68,10 @@ async def save_stock(list_of_raw_stocks):
     print("Наличие пустой БД")
     #print(stocks)
 
+async def delete_old_stocks(stocks_to_delete):
+    for stock in stocks_to_delete:
+        await Stock.filter(title=stock.title).first().delete()
+
 #находит новые товары, которых нет в БД
 async def update_stock(list_of_raw_stocks):
     stocks = {Stock(
@@ -79,17 +83,16 @@ async def update_stock(list_of_raw_stocks):
     # вычитаем из спарсенных товаров с сайта товары из бд, получаем новые
     new_stocks = stocks - stocks_from_db
     # сохраняем их в баэу
-    await Stock.bulk_create(stocks)
+    await Stock.bulk_create(new_stocks)
     # вычитаем из товаров из бд спарсенние товары с сайта, получаем старые
     products_removed_from_shop = stocks_from_db - stocks
-    #TODO удалить их используя тортойз орм
-    pass
+    await delete_old_stocks(products_removed_from_shop)
     # тепер находим пересечение и обновляем, вся логика изменения тут, что изменилось у товара
     for new_stock in stocks & stocks_from_db:
-        old_stock = await Stock.filter(number=new_stock.title).first()
-        # все ифы логика сравнения и уведомленпя тут old_stock = new_stock заменяем старые данные на ноыве
-        # если не совпадаэт
-        await old_stock.save()
+        old_stock = await Stock.filter(title=new_stock.title).first()
+        if new_stock.in_stock != old_stock.in_stock:
+            old_stock.in_stock = new_stock.in_stock
+            await old_stock.save()
 
 
 
