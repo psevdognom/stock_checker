@@ -4,7 +4,7 @@ from tortoise import fields
 
 class Stock(Model):
     id = fields.IntField(pk=True)
-    title = fields.TextField()
+    title = fields.CharField(unique=True, max_length=100)
     in_stock = fields.BooleanField(default=False)  # 0 if out of stock, 1 if in stock
     url = fields.TextField(null=True)
     created_date = fields.DatetimeField(auto_now_add=True, null=False)

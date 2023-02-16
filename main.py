@@ -70,7 +70,7 @@ async def save_stock(list_of_raw_stocks):
 
 async def delete_old_stocks(stocks_to_delete):
     for stock in stocks_to_delete:
-        await Stock.filter(title=stock.title).first().delete()
+        await Stock.get(title=stock.title).delete()
 
 #находит новые товары, которых нет в БД
 async def update_stock(list_of_raw_stocks):
